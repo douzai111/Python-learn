@@ -1,0 +1,40 @@
+# ----------------------------------------------------继承和多态--------------------------------------------------#
+# 对于Dog来说，Animal就是它的父类，对于Animal来说，Dog就是它的子类。Cat和Dog类似。
+class Animal(object):
+    def run(self):
+        print('Animal is running...')
+
+
+# 继承有什么好处？最大的好处是子类获得了父类的全部功能。由于Animial实现了run()方法，Dog和Cat作为它的子类，什么事也没干，就自动拥有了run()方法：
+# 继承的第二个好处需要我们对代码做一点改进。你看到了，无论是Dog还是Cat，它们run()的时候，显示的都是Animal is running...，符合逻辑的做法是分别显
+# 示Dog is running...和Cat is running...，因此，对Dog和Cat类改进如下：
+# 当子类和父类都存在相同的run()方法时，我们说，子类的run()覆盖了父类的run()，在代码运行的时候，总是会调用子类的run()。这样，我们就获得了继承的另一
+# 个好处：多态。
+class Dog(Animal):
+    def run(self):
+        print('Dog is running...')
+
+
+class Cat(Animal):
+    def run(self):
+        print('Cat is running...')
+
+
+def run_twice(animal):
+    animal.run()
+    animal.run()
+
+
+a = Animal()
+d = Dog()
+c = Cat()
+
+print('a is Animal?', isinstance(a, Animal))
+print('a is Dog?', isinstance(a, Dog))
+print('a is Cat?', isinstance(a, Cat))
+
+print('d is Animal?', isinstance(d, Animal))
+print('d is Dog?', isinstance(d, Dog))
+print('d is Cat?', isinstance(d, Cat))
+
+run_twice(c)
