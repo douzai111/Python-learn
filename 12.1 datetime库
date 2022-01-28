@@ -1,0 +1,96 @@
+# ----------------------------------------------------datetime库-------------------------------------------------#
+# 一、获取当前日期和时间
+# 注意到datetime是模块，datetime模块还包含一个datetime类，通过from datetime import datetime导入的才是datetime这个类。
+# 如果仅导入import datetime，则必须引用全名datetime.datetime。
+from datetime import datetime
+
+# datetime.now()返回当前日期和时间，其类型是datetime。
+now = datetime.now()
+print(now, type(now), sep="\n")
+
+# 二、获取指定日期和时间
+dt = datetime(2020, 10, 6, 13, 50, 49)
+print(dt)
+
+# 三、datetime转换为timestamp
+# 注意Python的timestamp是一个浮点数，整数位表示秒。
+# 某些编程语言（如Java和JavaScript）的timestamp使用整数表示毫秒数，这种情况下只需要把timestamp除以1000就得到Python的浮点表示方法。
+t = dt.timestamp()
+print(t)
+
+# 四、timestamp转换为datetime
+# 本地时间
+u = datetime.fromtimestamp(t)
+v = datetime.utcfromtimestamp(t)
+# UTC时间
+print(u, v, sep="\n")
+
+# 五、str转换为datetime
+# 字符串'%Y-%m-%d %H:%M:%S'规定了日期和时间部分的格式。详细的说明请参考Python文档。注意转换后的datetime是没有时区信息的。
+cday = datetime.strptime('2015-6-1 18:19:20', '%Y-%m-%d %H:%M:%S')
+print(cday)
+
+# 六、datetime转换为str
+# 如果已经有了datetime对象，要把它格式化为字符串显示给用户，就需要转换为str，转换方法是通过strftime()实现的，同样需一个日期和时间的格式化字符串：
+print(now.strftime('%a, %b %d %H:%M'))
+
+# 七、datetime加减
+# 对日期和时间进行加减实际上就是把datetime往后或往前计算，得到新的datetime。加减可以直接用+和-运算符，不过需要导入timedelta这个类：
+from datetime import timedelta
+print("current datetime=", now)
+print("current + 10 hours=", now + timedelta(hours=10))
+print("current + 1 day=", now + timedelta(days=1))
+print("current + 2.5 days =", cday + timedelta(days=2, hours=12))
+
+# 八、本地时间转换为UTC时间
+# 本地时间是指系统设定时区的时间，例如北京时间是UTC+8:00时区的时间，而UTC时间指UTC+0:00时区的时间。
+# 一个datetime类型有一个时区属性tzinfo，但是默认为None，所以无法区分这个datetime到底是哪个时区，除非强行给datetime设置一个时区：
+from datetime import timezone
+tz_utc_8 = timezone(timedelta(hours=8))
+dt1 = now.replace(tzinfo=tz_utc_8)
+print(dt1)
+
+# 九、时区转换
+# 我们可以先通过utcnow()拿到当前的UTC时间，再转换为任意时区的时间：
+
+# 拿到UTC时间，并强制设置时区为UTC+0:00:
+utc_dt = datetime.utcnow().replace(tzinfo=timezone.utc)
+print(utc_dt)
+# astimezone()将转换时区为北京时间:
+bj_dt = utc_dt.astimezone(timezone(timedelta(hours=8)))
+print(bj_dt)
+# astimezone()将转换时区为东京时间:
+tokyo_dt = utc_dt.astimezone(timezone(timedelta(hours=9)))
+print(tokyo_dt)
+# astimezone()将bj_dt转换时区为东京时间:
+tokyo_dt2 = bj_dt.astimezone(timezone(timedelta(hours=9)))
+print(tokyo_dt2)
+
+# 练习：假设你获取了用户输入的日期和时间如2015-1-21 9:01:30，以及一个时区信息如UTC+5:00，均是str，请编写一个函数将其转换为timestamp：
+import re
+from datetime import datetime, timezone, timedelta
+
+
+def to_timestamp(dt_str, tz_str):
+    # 首先，获取用户输入的时间的datetime
+    input_dt = datetime.strptime(dt_str, '%Y-%m-%d %H:%M:%S')
+
+    # 上面得到的datetime是没有时区的，因此设置用户输入的对应时区
+    # 那么此时需要利用正则获取用户输入的时区
+    time_zone_num = re.match(r'UTC([+|-][\d]{1,2}):00', tz_str).group(1)
+    time_zone = timezone(timedelta(hours=int(time_zone_num)))  # 创建时区UTC
+
+    # 将上面得到的datetime强制设置为UTC
+    input_dt_tz = input_dt.replace(tzinfo=time_zone)
+
+    return input_dt_tz.timestamp()
+
+
+# 测试:
+t1 = to_timestamp('2015-6-1 08:10:30', 'UTC+7:00')
+assert t1 == 1433121030.0, t1
+
+t2 = to_timestamp('2015-5-31 16:10:30', 'UTC-09:00')
+assert t2 == 1433121030.0, t2
+
+print('ok')
