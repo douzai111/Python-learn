@@ -1,0 +1,76 @@
+# ------------------------------------------------------itertools库---------------------------------------------#
+# 一、无限迭代器
+# 1. count
+# count()会创建一个无限的迭代器，所以上述代码会打印出自然数序列，根本停不下来。
+import itertools
+
+natuals = itertools.count(1)
+# for n in natuals:
+#     print(n)
+# 2. circle
+# cycle()会把传入的一个序列无限重复下去。
+cs = itertools.cycle("ABC")
+# for c in cs:
+#     print(c)
+# 3. repeat
+# repeat()负责把一个元素无限重复下去，不过如果提供第二个参数就可以限定重复次数：
+ns = itertools.repeat("A", 10)
+for n in ns:
+    print(n)
+
+# 无限序列虽然可以无限迭代下去，但是通常我们会通过takewhile()等函数根据条件判断来截取出一个有限的序列：
+natuals1 = itertools.count(1)
+ns1 = itertools.takewhile(lambda x: x <= 10, natuals1)
+print(list(ns1))
+
+# 二、chain()
+# chain()可以把一组迭代对象串联起来，形成一个更大的迭代器：
+for c in itertools.chain("XYZ", "ABC"):
+    print(c)
+
+# 三、groupby()
+# groupby()把迭代器中相邻的重复元素挑出来放在一起：
+for key, group in itertools.groupby("AAAHHHWAHYDXX"):
+    print(key, list(group))
+# 实际上挑选规则是通过函数完成的，只要作用于函数的两个元素返回的值相等，这两个元素就被认为是在一组的，而函数返回值作为组的key。如果我们要忽略大小写分
+# 组，就可以让元素'A'和'a'都返回相同的key：
+for key, group in itertools.groupby("AAAUUWSauzzZ", lambda c: c.upper()):
+    print(key, list(group))
+
+# 例子：利用Python提供的itertools模块，我们来计算求pi值序列的前N项和：
+# -*- coding: utf-8 -*-
+import itertools
+
+
+def odd(x):
+    if x % 2 != 0:
+        return x
+
+
+def pi(n):
+    list_odd = itertools.count(1)
+    list_odd_n = filter(odd, list(itertools.takewhile(lambda x: x <= 2 * n, list_odd)))
+    num = 0
+    result = []
+    for k in list_odd_n:
+        if num % 2 == 0:
+            result.append(4 / k)
+        else:
+            result.append(-4 / k)
+        num += 1
+    sum = 0
+    for i in result:
+        sum += i
+    return sum
+
+
+# 测试:
+print(pi(10))
+print(pi(100))
+print(pi(1000))
+print(pi(10000))
+assert 3.04 < pi(10) < 3.05
+assert 3.13 < pi(100) < 3.14
+assert 3.140 < pi(1000) < 3.141
+assert 3.1414 < pi(10000) < 3.1415
+print('ok')
