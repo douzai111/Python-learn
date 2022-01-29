@@ -1,0 +1,93 @@
+# ----------------------------------------------hashlib库------------------------------------------------------#
+# 摘要算法就是通过摘要函数f()对任意长度的数据data计算出固定长度的摘要digest，目的是为了发现原始数据是否被人篡改过。摘要算法之所以能指出数据是否被篡
+# 改过，就是因为摘要函数是一个单向函数，计算f(data)很容易，但通过digest反推data却非常困难。而且，对原始数据做一个bit的修改，都会导致计算出的摘要完
+# 全不同。
+
+# Python的hashlib提供了常见的摘要算法，如MD5，SHA1等等。我们以常见的摘要算法MD5为例，计算出一个字符串的MD5值：
+import hashlib
+md5 = hashlib.md5()
+md5.update("WHZ0715xkck1012".encode("UTF-8"))
+print(md5.hexdigest())
+# MD5是最常见的摘要算法，速度很快，生成结果是固定的128 bit字节，通常用一个32位的16进制字符串表示。
+
+# 另一种常见的摘要算法是SHA1，调用SHA1和调用MD5完全类似：
+import hashlib
+sha1 = hashlib.sha1()
+sha1.update("WHZ0715xkck1012".encode("UTF-8"))
+print(sha1.hexdigest())
+# SHA1的结果是160 bit字节，通常用一个40位的16进制字符串表示。比SHA1更安全的算法是SHA256和SHA512，不过越安全的算法不仅越慢，而且摘要长度更长。
+
+# 摘要算法能应用到什么地方？举个常用例子：任何允许用户登录的网站都会存储用户登录的用户名和口令。如何存储用户名和口令呢？方法是存到数据库表中：
+# 如果以明文保存用户口令，如果数据库泄露，所有用户的口令就落入黑客的手里。此外，网站运维人员是可以访问数据库的，也就是能获取到所有用户的口令。
+# 正确的保存口令的方式是不存储用户的明文口令，而是存储用户口令的摘要，比如MD5：
+# 当用户登录时，首先计算用户输入的明文口令的MD5，然后和数据库存储的MD5对比，如果一致，说明口令输入正确，如果不一致，口令肯定错误。
+
+# 练习：设计一个验证用户登录的函数，根据用户输入的口令是否正确，返回True或False：
+import hashlib
+
+db = {}
+
+
+# 注册功能
+def register(username, password):
+    md5 = hashlib.md5()
+    md5.update(password.encode('utf-8'))
+    db[username] = md5.hexdigest()
+
+
+# 登录功能
+def login(username, password):
+    md5 = hashlib.md5()
+    md5.update(password.encode('utf-8'))
+    if md5.hexdigest() == db[username]:
+        print('%s登录成功' % username)
+        return
+    print('登录失败')
+
+
+register('sparks_fly', 'spark123456')
+register('Mary', 'qq6411589')
+login('Mary', 'qq6411589')
+
+# 由于常用口令的MD5值很容易被计算出来，所以，要确保存储的用户口令不是那些已经被计算出来的常用口令的MD5，这一方法通过对原始口令加一个复杂字符串来实现，
+# 俗称“加盐”。经过Salt处理的MD5口令，只要Salt不被黑客知道，即使用户输入简单口令，也很难通过MD5反推明文口令。
+# 但是如果有两个用户都使用了相同的简单口令比如123456，在数据库中，将存储两条相同的MD5值，这说明这两个用户的口令是一样的。有没有办法让使用相同口令的用
+# 户存储不同的MD5呢？如果假定用户无法修改登录名，就可以通过把登录名作为Salt的一部分来计算MD5，从而实现相同口令的用户也存储不同的MD5。
+
+# 练习：根据用户输入的登录名和口令模拟用户注册，计算更安全的MD5：
+import hashlib
+
+db = {}
+
+
+# 注册功能
+def register(username, password):
+    md5 = hashlib.md5()
+    md5.update((password + username).encode('utf-8'))  # 拼接密码和用户名
+    db[username] = md5.hexdigest()
+
+
+# 登录功能
+def login(username, password):
+    md5 = hashlib.md5()
+    md5.update((password + username).encode('utf-8'))
+    if md5.hexdigest() == db[username]:
+        print('%s登录成功' % username)
+        return
+    print('%s登录失败' % username)
+
+
+register('sparks_fly', 'spark123456')
+register('Mary', 'qq6411589')
+print('注册后数据库中写入的数据应该如下：')
+for key in db:
+    print('用户名：%-15s 密码：%s' % (key, db[key]))
+login('Mary', 'qq6411589')
+
+# 使用hmac：在上面的案例中，我们手动把用户名和密码进行拼凑，然后再生成MD5码，但是在python中提供了一种内建模块hmac可以帮我们做这件事，用此模块也会更
+# 标准。代码如下：
+import hmac
+h = hmac.new(b'Mary', b'qq6411589', digestmod='MD5')
+print(h.hexdigest())
+
+
