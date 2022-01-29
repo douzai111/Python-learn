@@ -1,0 +1,111 @@
+# ----------------------------------------------------HTMLParser库---------------------------------------------------#
+from html.parser import HTMLParser
+from html.entities import name2codepoint
+
+
+class MyHTMLParser(HTMLParser):
+
+    def handle_starttag(self, tag, attrs):
+        print('<%s>' % tag)
+
+    def handle_endtag(self, tag):
+        print('</%s>' % tag)
+
+    def handle_startendtag(self, tag, attrs):
+        print('<%s/>' % tag)
+
+    def handle_data(self, data):
+        print(data)
+
+    def handle_comment(self, data):
+        print('<!--', data, '-->')
+
+    def handle_entityref(self, name):
+        print('&%s;' % name)
+
+    def handle_charref(self, name):
+        print('&#%s;' % name)
+
+
+parser = MyHTMLParser()
+parser.feed('''<html>
+<head></head>
+<body>
+<!-- test html parser -->
+    <p>Some <a href=\"#\">html</a> HTML&nbsp;tutorial...<br>END</p>
+</body></html>''')
+# feed()方法可以多次调用，也就是不一定一次把整个HTML字符串都塞进去，可以一部分一部分塞进去。
+# 特殊字符有两种，一种是英文表示的&nbsp;，一种是数字表示的&#1234;，这两种字符都可以通过Parser解析出来。
+
+# 练习：找一个网页，例如https://www.python.org/events/python-events/，用浏览器查看源码并复制，然后尝试解析一下HTML，输出Python官网发布的
+# 会议时间、名称和地点。
+from urllib import request
+
+
+class MyHTMLParser(HTMLParser):
+    def __init__(self):
+        HTMLParser.__init__(self)
+        self._title = [False]
+        self._time = [False]
+        self._place = [False]
+        self.time = ''  # 用于拼接时间
+
+    def _attr(self, attrlist, attrname):
+        for attr in attrlist:
+            if attr[0] == attrname:
+                return attr[1]
+        return None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == 'h3' and self._attr(attrs, 'class') == 'event-title':
+            self._title[0] = True
+        if tag == 'time':
+            self._time[0] = True
+        if tag == 'span' and self._attr(attrs, 'class') == 'event-location':
+            self._place[0] = True
+
+    def handle_endtag(self, tag):
+        if tag == 'time':
+            self._time.append(self.time)  # 将time完整内容放入self._time
+            self.time = ''  # 初始化 self.time
+            self._time[0] = False
+
+    def handle_startendtag(self, tag, attrs):
+        pass
+
+    def handle_data(self, data):
+        if self._title[0]:
+            self._title.append(data)
+            self._title[0] = False
+        if self._time[0]:
+            self.time += data  # 拼接time
+        if self._place[0]:
+            self._place.append(data)
+            self._place[0] = False
+
+    def handle_comment(self, data):
+        pass
+
+    def handle_entityref(self, name):
+        if self._time[0]:
+            self.time += '-'
+
+    def handle_charref(self, name):
+        print('&#%s;' % name)
+
+    def show_content(self):
+        for n in range(1, len(self._title)):
+            print('Title: %s' % self._title[n])
+            print('Time:  %s' % self._time[n])
+            print('Place: %s' % self._place[n])
+            print('--------------------------------------')
+
+
+url = "https://www.python.org/events/python-events/"
+req = request.Request(url)
+with request.urlopen(req) as f:
+    html = f.read().decode('utf-8')
+
+parser = MyHTMLParser()
+parser.feed(html)
+parser.show_content()
